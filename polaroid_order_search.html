@@ -46,52 +46,56 @@
 
 <script>
 const SHEET_ID = '14oLUa0F6VlCxQ2LZGsJgV4oGXICylQPC6vO_aq6deiI';
-const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
 let orders = [];
 const levelLabel = { '1': 'งานไว', '2': 'งานหลัก', '3': 'งานใหญ่' };
-const levelClass = { '1': 'badge-1', '2': 'badge-2', '3': 'badge-3' };
+const levelClass  = { '1': 'badge-1', '2': 'badge-2', '3': 'badge-3' };
 
-function toThaiShortYear(dateStr) {
-  if (!dateStr) return '';
-  dateStr = dateStr.trim();
+// แปลงค่า cell วันที่ (อาจเป็น Date object จาก gviz หรือ string) → Date object
+function cellToDate(cell) {
+  if (!cell) return null;
 
-  let d, m, y;
+  // gviz ส่ง Date เป็น object { v: "Date(2026,4,30)", ... } หรือ v เป็น string "Date(2026,4,30)"
+  const raw = cell.v;
+  if (raw === null || raw === undefined) return null;
 
-  // DD/MM/YY — พ.ศ. 2 หลัก เช่น 25/05/69
-  const m1 = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
-  if (m1) {
-    d = parseInt(m1[1]);
-    m = parseInt(m1[2]);
-    // ปี พ.ศ. 2 หลัก → แปลงเป็น ค.ศ. เพื่อคำนวณ deadline
-    const thFull = 2500 + parseInt(m1[3]);
-    const adYear = thFull - 543;
-    const dt = new Date(adYear, m - 1, d);
-    dt.setDate(dt.getDate() - 1);
-    return formatThai2(dt);
+  // กรณี string "Date(yyyy,m,d)" — month เป็น 0-based
+  if (typeof raw === 'string') {
+    const dm = raw.match(/Date\((\d+),(\d+),(\d+)\)/);
+    if (dm) return new Date(parseInt(dm[1]), parseInt(dm[2]), parseInt(dm[3]));
+
+    // string ธรรมดา เช่น "25/05/69" หรือ "04/06/2026"
+    const s = raw.trim();
+    const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+    if (m1) {
+      const thFull = 2500 + parseInt(m1[3]);
+      return new Date(thFull - 543, parseInt(m1[2]) - 1, parseInt(m1[1]));
+    }
+    const m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m2) return new Date(parseInt(m2[3]), parseInt(m2[2]) - 1, parseInt(m2[1]));
   }
 
-  // DD/MM/YYYY — ค.ศ. 4 หลัก เช่น 04/06/2026
-  const m2 = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m2) {
-    d = parseInt(m2[1]);
-    m = parseInt(m2[2]);
-    const adYear = parseInt(m2[3]);
-    const dt = new Date(adYear, m - 1, d);
-    dt.setDate(dt.getDate() - 1);
-    return formatThai2(dt);
-  }
-
-  return '';
+  return null;
 }
 
-function formatThai2(dt) {
+// แสดงวันที่เป็น DD-MM-YY (พ.ศ. 2 หลัก)
+function formatDisplay(dt) {
+  if (!dt) return '';
   const dd = String(dt.getDate()).padStart(2, '0');
   const mm = String(dt.getMonth() + 1).padStart(2, '0');
-  // แปลงเป็น พ.ศ. แล้วเอา 2 หลักท้าย
   const thYear = dt.getFullYear() + 543;
   const yy = String(thYear).slice(-2);
   return `${dd}-${mm}-${yy}`;
+}
+
+function getDeadline(cell) {
+  const dt = cellToDate(cell);
+  if (!dt) return { display: '', deadline: '' };
+  const display = formatDisplay(dt);
+  const deadlineDt = new Date(dt);
+  deadlineDt.setDate(deadlineDt.getDate() - 1);
+  return { display, deadline: formatDisplay(deadlineDt) };
 }
 
 function folderName(o) {
@@ -101,20 +105,19 @@ function folderName(o) {
 
 async function loadData() {
   try {
-    const res = await fetch(URL);
+    const res = await fetch(SHEET_URL);
     const text = await res.text();
     const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
-    const rows = json.table.rows;
     orders = [];
-    for (const row of rows) {
-      const cells = row.c || [];
-      const id = cells[6]?.v?.toString().trim() || '';
-      const name = cells[1]?.v?.toString().trim() || '';
-      const shipRaw = cells[4]?.v?.toString().trim() || '';
-      const levelRaw = cells[14]?.v;
+    for (const row of json.table.rows) {
+      const c = row.c || [];
+      const id = c[6]?.v?.toString().trim() || '';
+      const name = c[1]?.v?.toString().trim() || '';
+      const levelRaw = c[14]?.v;
       const level = (levelRaw !== null && levelRaw !== undefined) ? String(Math.round(Number(levelRaw))) : '';
       if (!id.startsWith('PT-')) continue;
-      orders.push({ id, name, shipDate: shipRaw, deadline: toThaiShortYear(shipRaw), level });
+      const { display, deadline } = getDeadline(c[4]);
+      orders.push({ id, name, shipDate: display, deadline, level });
     }
     document.getElementById('results').innerHTML = '<div class="status">พิมพ์รหัสออเดอร์หรือชื่อลูกค้าเพื่อค้นหาค่ะ</div>';
   } catch (e) {
@@ -138,30 +141,22 @@ function doSearch() {
         <div class="meta">รอบจัดส่ง: ${o.shipDate} &nbsp;|&nbsp; เดดไลน์: ${o.deadline}</div>
       </div>
       ${levelLabel[o.level] ? `<span class="badge ${levelClass[o.level]}">${levelLabel[o.level]}</span>` : ''}
-      <button class="copy-btn" id="btn-${i}" onclick="copyText('${fn.replace(/'/g,"\\'")}', ${i})">
-        📋 ก๊อปปี้
-      </button>
+      <button class="copy-btn" id="btn-${i}" onclick="copyText('${fn.replace(/'/g,"\\'")}',${i})">📋 ก๊อปปี้</button>
     </div>`;
   }).join('');
 }
 
 function copyText(text, i) {
-  navigator.clipboard.writeText(text).then(() => {
+  const done = () => {
     const btn = document.getElementById('btn-' + i);
     btn.classList.add('copied');
     btn.textContent = '✅ คัดลอกแล้ว!';
     setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '📋 ก๊อปปี้'; }, 2000);
-  }).catch(() => {
+  };
+  navigator.clipboard?.writeText(text).then(done).catch(() => {
     const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    const btn = document.getElementById('btn-' + i);
-    btn.classList.add('copied');
-    btn.textContent = '✅ คัดลอกแล้ว!';
-    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '📋 ก๊อปปี้'; }, 2000);
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); done();
   });
 }
 
