@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ค้นหาออเดอร์ - Polaroid Tamsung</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: #f5f5f0;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    color: #1a1a1a;
+  }
+  .container { max-width: 700px; margin: 0 auto; }
+  h1 {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: #1a1a1a;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 1.5rem;
+  }
+  .search-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+  .search-bar input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: 'Sarabun', sans-serif;
+    outline: none;
+    background: #fff;
+  }
+  .search-bar input:focus { border-color: #888; }
+  .search-bar button {
+    padding: 10px 18px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Sarabun', sans-serif;
+    cursor: pointer;
+  }
+  .search-bar button:hover { background: #333; }
+  .result-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .folder-icon { font-size: 22px; flex-shrink: 0; }
+  .info { flex: 1; min-width: 0; }
+  .folder-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: #1a1a1a;
+    word-break: break-all;
+  }
+  .meta {
+    font-size: 12px;
+    color: #999;
+    margin-top: 3px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .badge-1 { background: #fde8e8; color: #b03030; }
+  .badge-2 { background: #e3eeff; color: #1a5bbf; }
+  .badge-3 { background: #fef3e0; color: #925d0a; }
+  .copy-btn {
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #555;
+    border-radius: 8px;
+    padding: 7px 13px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'Sarabun', sans-serif;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { background: #f5f5f5; }
+  .copy-btn.copied { color: #0a7c5a; border-color: #0a7c5a; background: #edfaf5; }
+  .status {
+    text-align: center;
+    color: #aaa;
+    font-size: 14px;
+    padding: 2.5rem 0;
+  }
+  .loading { text-align: center; color: #888; font-size: 14px; padding: 2rem 0; }
+  .count {
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 10px;
+  }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+  <h1>📁 ค้นหาชื่อโฟลเดอร์</h1>
+  <p class="subtitle">Polaroid Tamsung — ดึงข้อมูลจาก Google Sheet</p>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="พิมพ์รหัสออเดอร์ หรือชื่อลูกค้า เช่น PT-00001" oninput="doSearch()" />
+    <button onclick="doSearch()">🔍 ค้นหา</button>
+  </div>
+
+  <div id="results"><div class="loading">⏳ กำลังโหลดข้อมูล...</div></div>
+</div>
+
+<script>
+const SHEET_ID = '14oLUa0F6VlCxQ2LZGsJgV4oGXICylQPC6vO_aq6deiI';
+const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+let orders = [];
+
+const levelLabel = { '1': 'งานไว', '2': 'งานหลัก', '3': 'งานใหญ่' };
+const levelClass = { '1': 'badge-1', '2': 'badge-2', '3': 'badge-3' };
+
+function parseDeadline(raw) {
+  if (!raw) return '';
+  raw = raw.trim();
+
+  // format: DD/MM/YY (thai year 2 digit)
+  let m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+  if (m) {
+    const thYear = 2500 + parseInt(m[3]);
+    const dt = new Date(thYear - 543, parseInt(m[2]) - 1, parseInt(m[1]));
+    dt.setDate(dt.getDate() - 1);
+    return formatDate(dt);
+  }
+
+  // format: DD/MM/YYYY (christian year)
+  m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const dt = new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+    dt.setDate(dt.getDate() - 1);
+    return formatDate(dt);
+  }
+
+  return '';
+}
+
+function formatDate(dt) {
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const yy = String((dt.getFullYear() + 543) % 100).padStart(2, '0');
+  return `${dd}-${mm}-${yy}`;
+}
+
+function folderName(o) {
+  const lvl = levelLabel[o.level] || '';
+  return [o.id, o.name, o.deadline, lvl].filter(Boolean).join(' ');
+}
+
+async function loadData() {
+  try {
+    const res = await fetch(URL);
+    const text = await res.text();
+    const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
+    const rows = json.table.rows;
+    orders = [];
+    for (const row of rows) {
+      const cells = row.c || [];
+      const id = cells[6]?.v?.toString().trim() || '';
+      const name = cells[1]?.v?.toString().trim() || '';
+      const shipRaw = cells[4]?.v?.toString().trim() || '';
+      const levelRaw = cells[14]?.v;
+      const level = (levelRaw !== null && levelRaw !== undefined) ? String(Math.round(Number(levelRaw))) : '';
+      if (!id.startsWith('PT-')) continue;
+      orders.push({
+        id,
+        name,
+        shipDate: shipRaw,
+        deadline: parseDeadline(shipRaw),
+        level
+      });
+    }
+    document.getElementById('results').innerHTML = '<div class="status">พิมพ์รหัสออเดอร์หรือชื่อลูกค้าเพื่อค้นหาค่ะ</div>';
+  } catch (e) {
+    document.getElementById('results').innerHTML = '<div class="status">❌ โหลดข้อมูลไม่สำเร็จ — ตรวจสอบการเชื่อมต่ออินเตอร์เน็ตค่ะ</div>';
+  }
+}
+
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const el = document.getElementById('results');
+  if (!q) {
+    el.innerHTML = '<div class="status">พิมพ์รหัสออเดอร์หรือชื่อลูกค้าเพื่อค้นหาค่ะ</div>';
+    return;
+  }
+  const found = orders.filter(o =>
+    o.id.toLowerCase().includes(q) || o.name.toLowerCase().includes(q)
+  );
+  if (!found.length) {
+    el.innerHTML = '<div class="status">ไม่พบออเดอร์ที่ค้นหาค่ะ</div>';
+    return;
+  }
+  el.innerHTML = `<div class="count">พบ ${found.length} รายการ</div>` + found.map((o, i) => {
+    const fn = folderName(o);
+    return `
+    <div class="result-card">
+      <div class="folder-icon">📁</div>
+      <div class="info">
+        <div class="folder-name">${fn}</div>
+        <div class="meta">รอบจัดส่ง: ${o.shipDate} &nbsp;|&nbsp; เดดไลน์: ${o.deadline}</div>
+      </div>
+      ${levelLabel[o.level] ? `<span class="badge ${levelClass[o.level]}">${levelLabel[o.level]}</span>` : ''}
+      <button class="copy-btn" id="btn-${i}" onclick="copyText('${fn.replace(/'/g,"\\'")}', ${i})">
+        📋 ก๊อปปี้
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function copyText(text, i) {
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btn-' + i);
+    btn.classList.add('copied');
+    btn.textContent = '✅ คัดลอกแล้ว!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.textContent = '📋 ก๊อปปี้';
+    }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.getElementById('btn-' + i);
+    btn.classList.add('copied');
+    btn.textContent = '✅ คัดลอกแล้ว!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.textContent = '📋 ก๊อปปี้';
+    }, 2000);
+  });
+}
+
+loadData();
+</script>
+</body>
+</html>
