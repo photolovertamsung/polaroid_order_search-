@@ -3,89 +3,343 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ค้นหาออเดอร์ - Polaroid Tamsung</title>
+<title>Polaroid Tamsung — Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Sarabun', sans-serif; background: #f5f5f0; min-height: 100vh; padding: 2rem 1rem; color: #1a1a1a; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: #f5f5f0;
+    min-height: 100vh;
+    color: #1a1a1a;
+  }
+
+  /* ===== TOP NAV ===== */
+  .topbar {
+    background: #fff;
+    border-bottom: 1px solid #e8e8e8;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .brand {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #2d7a3a;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 16px 0;
+    margin-right: 20px;
+    flex-shrink: 0;
+  }
+
+  .nav-tabs {
+    display: flex;
+    gap: 0;
+    flex: 1;
+  }
+
+  .nav-tab {
+    padding: 16px 20px;
+    font-size: 14px;
+    font-family: 'Sarabun', sans-serif;
+    font-weight: 500;
+    color: #888;
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .nav-tab:hover { color: #1a1a1a; }
+
+  .nav-tab.active {
+    color: #1a1a1a;
+    border-bottom-color: #2d7a3a;
+  }
+
+  /* ===== PAGES ===== */
+  .page { display: none; padding: 24px 16px; }
+  .page.active { display: block; }
+
   .container { max-width: 700px; margin: 0 auto; }
-  h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; color: #1a1a1a; }
+
+  /* ===== SEARCH PAGE ===== */
+  h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
   .subtitle { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
+
   .search-bar { display: flex; gap: 8px; margin-bottom: 1.5rem; }
-  .search-bar input { flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; font-family: 'Sarabun', sans-serif; outline: none; background: #fff; }
+  .search-bar input {
+    flex: 1; padding: 10px 14px;
+    border: 1px solid #ddd; border-radius: 8px;
+    font-size: 15px; font-family: 'Sarabun', sans-serif;
+    outline: none; background: #fff;
+  }
   .search-bar input:focus { border-color: #888; }
-  .search-bar button { padding: 10px 18px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-family: 'Sarabun', sans-serif; cursor: pointer; }
+  .search-bar button {
+    padding: 10px 18px; background: #1a1a1a; color: #fff;
+    border: none; border-radius: 8px; font-size: 14px;
+    font-family: 'Sarabun', sans-serif; cursor: pointer;
+  }
   .search-bar button:hover { background: #333; }
-  .result-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+
+  .result-card {
+    background: #fff; border: 1px solid #e8e8e8;
+    border-radius: 10px; padding: 14px 16px;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
+  }
   .folder-icon { font-size: 22px; flex-shrink: 0; }
   .info { flex: 1; min-width: 0; }
-  .folder-name { font-size: 15px; font-weight: 500; color: #1a1a1a; word-break: break-all; }
+  .folder-name { font-size: 15px; font-weight: 500; word-break: break-all; }
   .meta { font-size: 12px; color: #999; margin-top: 3px; }
   .badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
   .badge-1 { background: #fde8e8; color: #b03030; }
   .badge-2 { background: #e3eeff; color: #1a5bbf; }
   .badge-3 { background: #fef3e0; color: #925d0a; }
-  .copy-btn { border: 1px solid #ddd; background: #fff; color: #555; border-radius: 8px; padding: 7px 13px; cursor: pointer; font-size: 13px; font-family: 'Sarabun', sans-serif; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; }
+  .copy-btn {
+    border: 1px solid #ddd; background: #fff; color: #555;
+    border-radius: 8px; padding: 7px 13px; cursor: pointer;
+    font-size: 13px; font-family: 'Sarabun', sans-serif;
+    white-space: nowrap; flex-shrink: 0; transition: all 0.15s;
+  }
   .copy-btn:hover { background: #f5f5f5; }
   .copy-btn.copied { color: #0a7c5a; border-color: #0a7c5a; background: #edfaf5; }
   .status { text-align: center; color: #aaa; font-size: 14px; padding: 2.5rem 0; }
   .loading { text-align: center; color: #888; font-size: 14px; padding: 2rem 0; }
   .count { font-size: 12px; color: #aaa; margin-bottom: 10px; }
+
+  /* ===== PARSER PAGE ===== */
+  .card {
+    background: #fff; border: 1px solid #e8e8e8;
+    border-radius: 12px; padding: 20px; margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 12px; font-weight: 600; color: #888;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .card-title span { color: #2d7a3a; font-size: 14px; }
+
+  textarea {
+    width: 100%; background: #f8f8f6;
+    border: 1px solid #e0e0dc; border-radius: 8px;
+    color: #1a1a1a; font-family: 'Sarabun', sans-serif;
+    font-size: 13px; padding: 12px; resize: vertical;
+    min-height: 140px; outline: none; transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: #2d7a3a; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label {
+    font-size: 11px; font-weight: 600; color: #888;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  input {
+    background: #f8f8f6; border: 1px solid #e0e0dc;
+    border-radius: 8px; color: #1a1a1a;
+    font-family: 'Sarabun', sans-serif; font-size: 14px;
+    padding: 10px 12px; outline: none; transition: border-color 0.2s; width: 100%;
+  }
+  input:focus { border-color: #2d7a3a; }
+  .field-full { margin-bottom: 12px; }
+
+  .tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600;
+  }
+  .tag-auto { background: rgba(26,107,107,0.1); color: #1a6b6b; }
+  .tag-manual { background: rgba(45,122,58,0.1); color: #2d7a3a; }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 4px; }
+  button.btn-parse {
+    font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: 600;
+    padding: 12px 20px; border-radius: 8px;
+    background: #f0f0ee; color: #1a1a1a;
+    border: 1px solid #e0e0dc; cursor: pointer;
+    transition: all 0.15s; flex: 1;
+  }
+  button.btn-parse:hover { border-color: #2d7a3a; color: #2d7a3a; }
+
+  button.btn-push {
+    font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: 600;
+    padding: 12px 20px; border-radius: 8px;
+    background: #2d7a3a; color: #fff;
+    border: none; cursor: pointer; transition: all 0.15s; flex: 1;
+  }
+  button.btn-push:hover { background: #236130; transform: translateY(-1px); }
+  button.btn-push:disabled { background: #ccc; color: #888; transform: none; cursor: not-allowed; }
+
+  button.btn-clear {
+    font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: 600;
+    padding: 12px 16px; border-radius: 8px;
+    background: transparent; color: #888;
+    border: 1px solid #e0e0dc; cursor: pointer;
+    transition: all 0.15s; flex: 0 0 auto;
+  }
+  button.btn-clear:hover { color: #c0392b; border-color: #c0392b; }
+
+  .api-url {
+    font-family: 'Space Mono', monospace; font-size: 10px; color: #aaa;
+    background: #f8f8f6; border: 1px solid #e0e0dc;
+    padding: 6px 10px; border-radius: 6px;
+    word-break: break-all; margin-bottom: 12px;
+  }
+
+  .status-bar {
+    display: none; align-items: center; gap: 10px;
+    padding: 12px 16px; border-radius: 8px;
+    font-size: 13px; margin-top: 12px;
+  }
+  .status-bar.show { display: flex; }
+  .status-success { background: rgba(45,122,58,0.08); border: 1px solid rgba(45,122,58,0.2); color: #2d7a3a; }
+  .status-error { background: rgba(192,57,43,0.08); border: 1px solid rgba(192,57,43,0.2); color: #c0392b; }
+  .status-loading { background: rgba(45,122,58,0.05); border: 1px solid rgba(45,122,58,0.15); color: #2d7a3a; }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-success { background: #2d7a3a; }
+  .dot-error { background: #c0392b; }
+  .dot-loading { background: #2d7a3a; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  @media (max-width: 480px) {
+    .row2 { grid-template-columns: 1fr; }
+    .nav-tab { padding: 14px 12px; font-size: 13px; }
+    .brand { margin-right: 8px; }
+  }
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="container">
-  <h1>📁 ค้นหาชื่อโฟลเดอร์</h1>
-  <p class="subtitle">Polaroid Tamsung — ดึงข้อมูลจาก Google Sheet</p>
-  <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="พิมพ์รหัสออเดอร์ หรือชื่อลูกค้า เช่น PT-00001" oninput="doSearch()" />
-    <button onclick="doSearch()">🔍 ค้นหา</button>
+
+<!-- TOP NAV -->
+<div class="topbar">
+  <div class="brand">PT</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('search', this)">📁 ค้นหาออเดอร์</button>
+    <button class="nav-tab" onclick="switchTab('parser', this)">➕ เพิ่มออเดอร์</button>
   </div>
-  <div id="results"><div class="loading">⏳ กำลังโหลดข้อมูล...</div></div>
+</div>
+
+<!-- PAGE: ค้นหา -->
+<div class="page active" id="page-search">
+  <div class="container">
+    <h1 style="margin-top:8px;">📁 ค้นหาชื่อโฟลเดอร์</h1>
+    <p class="subtitle">Polaroid Tamsung — ดึงข้อมูลจาก Google Sheet</p>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="พิมพ์รหัสออเดอร์ หรือชื่อลูกค้า เช่น PT-00001" oninput="doSearch()" />
+      <button onclick="doSearch()">🔍 ค้นหา</button>
+    </div>
+    <div id="results"><div class="loading">⏳ กำลังโหลดข้อมูล...</div></div>
+  </div>
+</div>
+
+<!-- PAGE: เพิ่มออเดอร์ -->
+<div class="page" id="page-parser">
+  <div class="container">
+
+    <div class="card">
+      <div class="card-title"><span>①</span> ข้อความออเดอร์ + ที่อยู่</div>
+      <textarea id="rawText" placeholder="Paste ข้อความออเดอร์จาก LINE ทั้งหมด รวมชื่อ ที่อยู่ เบอร์ รอบจัดส่ง..."></textarea>
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button class="btn-parse" onclick="parseOrder()">🔍 Parse ข้อมูล</button>
+        <button class="btn-clear" onclick="clearAll()">ล้าง</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>②</span> ตรวจสอบและแก้ไข</div>
+      <div class="row2">
+        <div class="field">
+          <label>รหัสออเดอร์ <span class="tag tag-manual">กรอกเอง</span></label>
+          <input type="text" id="orderId" placeholder="PT-00132" />
+        </div>
+        <div class="field">
+          <label>รอบจัดส่ง <span class="tag tag-auto">auto</span></label>
+          <input type="text" id="shipDate" placeholder="30/05/2026" />
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>ชื่อผู้รับ <span class="tag tag-auto">auto</span></label>
+          <input type="text" id="name" placeholder="ชื่อ-นามสกุล" />
+        </div>
+        <div class="field">
+          <label>เบอร์โทร <span class="tag tag-auto">auto</span></label>
+          <input type="text" id="phone" placeholder="08XXXXXXXX" />
+        </div>
+      </div>
+      <div class="field-full field">
+        <label>จังหวัด <span class="tag tag-auto">auto</span></label>
+        <input type="text" id="province" placeholder="จังหวัด..." />
+      </div>
+      <div class="field-full field" style="margin-top:12px;">
+        <label>ที่อยู่เต็ม (col L) <span class="tag tag-auto">auto</span></label>
+        <textarea id="address" style="min-height:80px;" placeholder="ชื่อ + ที่อยู่ + เบอร์"></textarea>
+      </div>
+      <div class="field-full field" style="margin-top:12px;">
+        <label>รายการสินค้า <span class="tag tag-auto">auto</span></label>
+        <textarea id="items" style="min-height:70px;" placeholder="รายการสินค้า..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>③</span> Push เข้า Google Sheet</div>
+      <div class="api-url">https://script.google.com/macros/s/AKfycbyYgGTwLc7nH8hfvskGcmUCfBYkq7WwDXaRu56KfjWbFopETMsAHE1yQ6XJUPzbK78D/exec</div>
+      <button class="btn-push" onclick="pushToSheet()" id="btnPush">🚀 Push เข้า Sheet</button>
+      <div class="status-bar" id="statusBar">
+        <div class="dot" id="statusDot"></div>
+        <span id="statusMsg"></span>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <script>
+// ===== TAB SWITCH =====
+function switchTab(tab, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  el.classList.add('active');
+}
+
+// ===== SEARCH =====
 const SHEET_ID = '14oLUa0F6VlCxQ2LZGsJgV4oGXICylQPC6vO_aq6deiI';
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-
 let orders = [];
 const levelLabel = { '1': 'งานไว', '2': 'งานหลัก', '3': 'งานใหญ่' };
 const levelClass  = { '1': 'badge-1', '2': 'badge-2', '3': 'badge-3' };
 
-// แปลงค่า cell วันที่ (อาจเป็น Date object จาก gviz หรือ string) → Date object
 function cellToDate(cell) {
   if (!cell) return null;
-
-  // gviz ส่ง Date เป็น object { v: "Date(2026,4,30)", ... } หรือ v เป็น string "Date(2026,4,30)"
   const raw = cell.v;
   if (raw === null || raw === undefined) return null;
-
-  // กรณี string "Date(yyyy,m,d)" — month เป็น 0-based
   if (typeof raw === 'string') {
     const dm = raw.match(/Date\((\d+),(\d+),(\d+)\)/);
     if (dm) return new Date(parseInt(dm[1]), parseInt(dm[2]), parseInt(dm[3]));
-
-    // string ธรรมดา เช่น "25/05/69" หรือ "04/06/2026"
     const s = raw.trim();
     const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
-    if (m1) {
-      const thFull = 2500 + parseInt(m1[3]);
-      return new Date(thFull - 543, parseInt(m1[2]) - 1, parseInt(m1[1]));
-    }
+    if (m1) return new Date(2500 + parseInt(m1[3]) - 543, parseInt(m1[2]) - 1, parseInt(m1[1]));
     const m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (m2) return new Date(parseInt(m2[3]), parseInt(m2[2]) - 1, parseInt(m2[1]));
   }
-
   return null;
 }
 
-// แสดงวันที่เป็น DD-MM-YY (พ.ศ. 2 หลัก)
 function formatDisplay(dt) {
   if (!dt) return '';
   const dd = String(dt.getDate()).padStart(2, '0');
   const mm = String(dt.getMonth() + 1).padStart(2, '0');
-  const thYear = dt.getFullYear() + 543;
-  const yy = String(thYear).slice(-2);
+  const yy = String(dt.getFullYear() + 543).slice(-2);
   return `${dd}-${mm}-${yy}`;
 }
 
@@ -99,8 +353,7 @@ function getDeadline(cell) {
 }
 
 function folderName(o) {
-  const lvl = levelLabel[o.level] || '';
-  return [o.id, o.name, o.deadline, lvl].filter(Boolean).join(' ');
+  return [o.id, o.name, o.deadline, levelLabel[o.level] || ''].filter(Boolean).join(' ');
 }
 
 async function loadData() {
@@ -121,7 +374,7 @@ async function loadData() {
     }
     document.getElementById('results').innerHTML = '<div class="status">พิมพ์รหัสออเดอร์หรือชื่อลูกค้าเพื่อค้นหาค่ะ</div>';
   } catch (e) {
-    document.getElementById('results').innerHTML = '<div class="status">❌ โหลดข้อมูลไม่สำเร็จ — ตรวจสอบการเชื่อมต่ออินเตอร์เน็ตค่ะ</div>';
+    document.getElementById('results').innerHTML = '<div class="status">❌ โหลดข้อมูลไม่สำเร็จค่ะ</div>';
   }
 }
 
@@ -158,6 +411,90 @@ function copyText(text, i) {
     ta.value = text; document.body.appendChild(ta); ta.select();
     document.execCommand('copy'); document.body.removeChild(ta); done();
   });
+}
+
+// ===== PARSER =====
+const API_URL = 'https://script.google.com/macros/s/AKfycbyYgGTwLc7nH8hfvskGcmUCfBYkq7WwDXaRu56KfjWbFopETMsAHE1yQ6XJUPzbK78D/exec';
+
+function parseOrder() {
+  const raw = document.getElementById('rawText').value.trim();
+  if (!raw) return;
+
+  const nameMatch = raw.match(/^([^\n]+)\n.*(?:ม\.|ต\.|อ\.|จ\.|ถ\.|ซ\.|หมู่|เลขที่)/m);
+  if (nameMatch) document.getElementById('name').value = nameMatch[1].trim();
+
+  const phoneMatch = raw.match(/(?:T\.|Tel\.?|โทร\.?|เบอร์[^\d]*)?[:\s]*(0[6-9]\d{8})/i);
+  if (phoneMatch) document.getElementById('phone').value = phoneMatch[1];
+
+  const provMatch = raw.match(/จ\.\s*([^\s\d\n,]+(?:\s+[^\s\d\n,]+)?)|จังหวัด\s*([^\s\d\n,]+)/);
+  if (provMatch) document.getElementById('province').value = (provMatch[1] || provMatch[2]).trim();
+
+  const dateMatch = raw.match(/รอบจัดส่ง[^:]*:\s*(\d{1,2}\/\d{1,2}\/\d{4})/);
+  if (dateMatch) document.getElementById('shipDate').value = dateMatch[1];
+
+  const itemsMatch = raw.match(/(?:งานพิมพ์รูป|สต๊กเกอร์|Photocard|จัดเซ็ต|Die-cut)([\s\S]*?)(?=ค่าสินค้า|━|$)/i);
+  if (itemsMatch) document.getElementById('items').value = itemsMatch[0].trim().replace(/\n+/g, '\n');
+
+  const name = document.getElementById('name').value;
+  const phone = document.getElementById('phone').value;
+  const addrBlock = raw.match(/(?:\d+\/\d+|\d+\s*ม\.)([\s\S]*?)(?:\d{5})/);
+  if (addrBlock) {
+    const fullAddr = addrBlock[0].trim();
+    document.getElementById('address').value = `${name}\n${fullAddr}\nT.${phone}`.trim();
+  }
+}
+
+function clearAll() {
+  ['rawText','orderId','name','phone','province','shipDate','address','items'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  hideStatus();
+}
+
+async function pushToSheet() {
+  const orderId = document.getElementById('orderId').value.trim();
+  const name = document.getElementById('name').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const province = document.getElementById('province').value.trim();
+  const shipDate = document.getElementById('shipDate').value.trim();
+  const address = document.getElementById('address').value.trim();
+  const items = document.getElementById('items').value.trim();
+
+  if (!orderId) { showStatus('error', 'กรุณากรอกรหัสออเดอร์ก่อนค่ะ'); return; }
+  if (!name) { showStatus('error', 'กรุณากรอกชื่อผู้รับก่อนค่ะ'); return; }
+
+  showStatus('loading', 'กำลัง push เข้า Sheet...');
+  document.getElementById('btnPush').disabled = true;
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'addOrder', orderId, name, phone, province, shipDate, address, items }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const json = await res.json();
+    if (json.ok) {
+      showStatus('success', json.msg || 'Push สำเร็จค่ะ! ✨');
+    } else {
+      showStatus('error', json.msg || 'เกิดข้อผิดพลาดค่ะ');
+    }
+  } catch (err) {
+    showStatus('error', 'ไม่สามารถเชื่อมต่อ API ได้: ' + err.message);
+  } finally {
+    document.getElementById('btnPush').disabled = false;
+  }
+}
+
+function showStatus(type, msg) {
+  const bar = document.getElementById('statusBar');
+  const dot = document.getElementById('statusDot');
+  bar.className = 'status-bar show status-' + type;
+  dot.className = 'dot dot-' + type;
+  document.getElementById('statusMsg').textContent = msg;
+}
+
+function hideStatus() {
+  document.getElementById('statusBar').className = 'status-bar';
 }
 
 loadData();
